@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Extension Icons</title>
+    <style>
+        body { font-family: sans-serif; background: #333; color: white; text-align: center; padding: 20px; }
+        .container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        canvas { border: 1px solid #555; background: transparent; }
+        .row { display: flex; gap: 20px; align-items: flex-end; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #FFD500; border: none; border-radius: 4px; color: black; font-weight: bold; }
+        a { color: #FFD500; }
+    </style>
+</head>
+<body>
+    <h1>Extension Icon Generator</h1>
+    <p>Click the buttons below to download PNG icons.</p>
+    
+    <div class="container">
+        <!-- Source SVG (Hidden) -->
+        <img id="sourceSvg" src="public/icons/logo_v2.svg" width="512" height="512" style="display:none" onload="initCanvases()">
+
+        <div class="row">
+            <div>
+                <p>128x128</p>
+                <canvas id="c128" width="128" height="128"></canvas>
+                <br><button onclick="download('c128', 'icon128.png')">Download 128</button>
+            </div>
+            <div>
+                <p>48x48</p>
+                <canvas id="c48" width="48" height="48"></canvas>
+                <br><button onclick="download('c48', 'icon48.png')">Download 48</button>
+            </div>
+            <div>
+                <p>16x16</p>
+                <canvas id="c16" width="16" height="16"></canvas>
+                <br><button onclick="download('c16', 'icon16.png')">Download 16</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function initCanvases() {
+            const img = document.getElementById('sourceSvg');
+            draw(img, 'c128', 128);
+            draw(img, 'c48', 48);
+            draw(img, 'c16', 16);
+        }
+
+        function draw(img, canvasId, size) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            ctx.drawImage(img, 0, 0, size, size);
+        }
+
+        function download(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

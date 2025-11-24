@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Exness Vue Stats",
-  "version": "2.0",
-  "description": "Thống kê Exness sử dụng VueJS",
+  "name": "Trade Stats & Tools for Exness Web",
+  "short_name": "ExTradeStats",
+  "version": "2.1",
+  "description": "Real-time trading statistics calculator and profit closing tool for Exness WebTerminal.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "permissions": [
     "cookies",
     "storage"

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1b2030" rx="80"/> <!-- Nền xanh đen Exness bo góc -->
+  <g transform="translate(56, 156)">
+    <!-- Chữ 'e' cách điệu -->
+    <path fill="#FFD500" d="M130 100c-40 0-70 30-70 70s30 70 70 70h60v-30h-60c-22 0-40-18-40-40s18-40 40-40h60v30h30v-60h-90z"/>
+    <path fill="#FFD500" d="M130 160h70v-20h-70z"/>
+    
+    <!-- Chữ 'x' cách điệu -->
+    <path fill="#FFD500" d="M240 100l40 60-40 60h35l25-40 25 40h35l-40-60 40-60h-35l-25 40-25-40z"/>
+  </g>
+  <!-- Text phụ TRADE -->
+  <text x="256" y="380" font-family="Arial, sans-serif" font-weight="bold" font-size="60" fill="#FFD500" text-anchor="middle" letter-spacing="4">TRADE</text>
+</svg>

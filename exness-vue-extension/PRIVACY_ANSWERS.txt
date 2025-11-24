@@ -1,0 +1,28 @@
+=== CHROME WEB STORE - PRIVACY PRACTICES ANSWERS ===
+
+1. Single Purpose Description:
+Provide a real-time dashboard overlay for calculating and displaying trading statistics (Buy/Sell volume, Break-even price) directly on the Exness WebTerminal interface.
+
+2. Justification for 'cookies' permission:
+The extension needs to read the 'JWT' cookie from the user's current active session on exness.com. This token is required to authenticate API requests to the trading server (eccweb.mobi) to fetch open positions and calculate statistics. No cookies are modified or sent to third-party servers.
+
+3. Justification for 'host_permissions' (exness.com, eccweb.mobi):
+Access to "*://*.exness.com/*" is required to inject the visual dashboard overlay (the VueJS component) into the webpage. Access to "*://*.eccweb.mobi/*" is required to communicate with the trading API (fetching positions and executing close commands) using the user's authenticated session.
+
+4. Justification for 'storage' permission:
+Used strictly to save the user's preferred screen position (X/Y coordinates) of the floating dashboard, ensuring the panel remains in the same place when the page is reloaded. No personal data is stored.
+
+5. Remote Code:
+(If asked "Do you use remote code?"): NO.
+(If text is required): "The extension does not use any remote code. All logic is bundled locally within the extension package."
+
+6. Data Usage:
+Check the box: "I certify that my data usage complies with the Developer Program Policies".
+
+=== DATA SAFETY DECLARATION ===
+(If asked about what data you collect)
+- Personally identifiable information: NO
+- Financial and payment information: NO (We read trading volume, not credit cards)
+- Authentication information: NO (We use the cookie locally, we don't store/transmit credentials)
+- Location: NO
+- Web history: NO

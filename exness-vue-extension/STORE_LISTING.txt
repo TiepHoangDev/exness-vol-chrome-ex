@@ -1,0 +1,43 @@
+=== STORE LISTING INFO ===
+
+1. Name:
+Trade Stats & Tools for Exness Web
+
+2. Short Name:
+ExTradeStats
+
+3. Summary (Description < 132 chars):
+Enhance Exness WebTerminal with real-time Buy/Sell volume stats, break-even analysis, and one-click profit closing.
+
+4. Description (Long):
+This extension provides essential trading utilities integrated directly into the Exness WebTerminal interface, designed for professional traders who need quick insights.
+
+Key Features:
+✅ Real-time Statistics:
+- Automatically calculates Total Buy Volume & Sell Volume.
+- Displays Average Entry Price for both Buy and Sell positions.
+- Calculates the Overall Break-even Price (Weighted Average).
+
+✅ Smart Dashboard:
+- A compact, horizontal floating bar that fits perfectly at the top or bottom of your chart.
+- Draggable interface: Place it anywhere on your screen.
+- Auto-hide/Minimize mode to save screen space.
+
+✅ Trading Tools:
+- CLOSE PROFIT button: Securely close all profitable positions with one click (requires confirmation).
+- Auto-detects Active Account and connects to the correct Trading Server (Real/Trial).
+
+How to use:
+1. Log in to Exness WebTerminal.
+2. The extension toolbar will appear automatically.
+3. Drag the toolbar to your preferred position.
+4. Use the "Close Profit" button to manage your trades efficiently.
+
+Privacy Policy:
+This extension operates entirely on the client side. It reads trading data directly from the Exness WebTerminal API using your active session. No personal data, trading history, or credentials are sent to any third-party servers.
+
+Disclaimer:
+This is an unofficial utility extension and is not affiliated with, endorsed by, or connected to Exness. Use at your own risk.
+
+=== CATEGORY ===
+Productivity / Workflow & Planning
