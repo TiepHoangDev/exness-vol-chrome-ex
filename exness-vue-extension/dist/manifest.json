@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Exness Vue Stats",
+  "version": "2.0",
+  "description": "Thống kê Exness sử dụng VueJS",
+  "permissions": [
+    "cookies",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.exness.com/*",
+    "*://*.eccweb.mobi/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.exness.com/*", "*://terminal.exness.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
