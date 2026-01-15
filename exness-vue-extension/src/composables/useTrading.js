@@ -5,13 +5,13 @@ const POLL_INTERVAL = 5000;
 
 export function useTrading(currentAccount, getToken) {
   const isPolling = ref(false);
-  const stats = reactive({
-    buyVol: 0, avgBuy: 0,
-    sellVol: 0, avgSell: 0,
-    avgBreakEven: 0
-  });
+  const stats = ref([]);
+  const totalProfit = ref(0);
+  const totalLoss = ref(0);
+  const timeLeft = ref(POLL_INTERVAL / 1000);
 
   let pollTimer = null;
+  let countdownTimer = null;
 
   // --- Helpers ---
   function generateUUID() {
@@ -23,43 +23,96 @@ export function useTrading(currentAccount, getToken) {
 
   function processData(data) {
     if (!data || !Array.isArray(data.positions)) {
-      // Có thể reset stats về 0 nếu muốn, hoặc giữ nguyên giá trị cũ
+      stats.value = [];
+      totalProfit.value = 0;
+      totalLoss.value = 0;
       return; 
     }
 
     const positions = data.positions.map(p => ({
       ...p,
       volume: Number(p.volume) || 0,
-      open_price: Number(p.open_price) || 0
+      open_price: Number(p.open_price) || 0,
+      profit: Number(p.profit) || 0
     }));
 
-    const buys = positions.filter(p => p.type === 0);
-    const sells = positions.filter(p => p.type === 1);
+    // Group by instrument
+    const instrumentMap = {};
+    
+    positions.forEach(p => {
+      if (!instrumentMap[p.instrument]) {
+        instrumentMap[p.instrument] = { buys: [], sells: [], positions: [] };
+      }
+      instrumentMap[p.instrument].positions.push(p);
+      if (p.type === 0) {
+        instrumentMap[p.instrument].buys.push(p);
+      } else if (p.type === 1) {
+        instrumentMap[p.instrument].sells.push(p);
+      }
+    });
 
-    const buyVol = buys.reduce((s, p) => s + p.volume, 0);
-    const sellVol = sells.reduce((s, p) => s + p.volume, 0);
+    // Calculate total profit and loss
+    let accProfit = 0;
+    let accLoss = 0;
+    positions.forEach(p => {
+      if (p.profit > 0) {
+        accProfit += p.profit;
+      } else {
+        accLoss += p.profit;
+      }
+    });
+    totalProfit.value = accProfit;
+    totalLoss.value = accLoss;
 
-    const buyValue = buys.reduce((s, p) => s + p.volume * p.open_price, 0);
-    const sellValue = sells.reduce((s, p) => s + p.volume * p.open_price, 0);
-
-    stats.buyVol = buyVol;
-    stats.sellVol = sellVol;
-    stats.avgBuy = buyVol ? buyValue / buyVol : 0;
-    stats.avgSell = sellVol ? sellValue / sellVol : 0;
-
-    if (buyVol && sellVol) {
-      const totalVol = buyVol + sellVol;
-      stats.avgBreakEven = (stats.avgBuy * buyVol + stats.avgSell * sellVol) / totalVol;
-    } else {
-      stats.avgBreakEven = buyVol ? stats.avgBuy : stats.avgSell;
-    }
+    // Calculate stats for each instrument
+    stats.value = Object.keys(instrumentMap).map(instrument => {
+      const { buys, sells, positions: instPositions } = instrumentMap[instrument];
+      
+      const buyVol = buys.reduce((s, p) => s + p.volume, 0);
+      const sellVol = sells.reduce((s, p) => s + p.volume, 0);
+      
+      const buyValue = buys.reduce((s, p) => s + p.volume * p.open_price, 0);
+      const sellValue = sells.reduce((s, p) => s + p.volume * p.open_price, 0);
+      
+      const avgBuy = buyVol ? buyValue / buyVol : 0;
+      const avgSell = sellVol ? sellValue / sellVol : 0;
+      
+      // Calculate profit/loss for this instrument
+      const totalProfit = instPositions.filter(p => p.profit > 0).reduce((sum, p) => sum + p.profit, 0);
+      const totalLoss = instPositions.filter(p => p.profit < 0).reduce((sum, p) => sum + p.profit, 0);
+      const profitPositions = instPositions.filter(p => p.profit > 0);
+      const lossPositions = instPositions.filter(p => p.profit < 0);
+      
+      return {
+        instrument,
+        buyVol,
+        avgBuy,
+        sellVol,
+        avgSell,
+        totalProfit,
+        totalLoss,
+        profitPositions,
+        lossPositions,
+        allPositions: instPositions
+      };
+    });
   }
 
   // --- Actions ---
   function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
     pollTimer = null;
+    countdownTimer = null;
     isPolling.value = false;
+  }
+
+  function startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    timeLeft.value = POLL_INTERVAL / 1000;
+    countdownTimer = setInterval(() => {
+      timeLeft.value = Math.max(0, timeLeft.value - 1);
+    }, 1000);
   }
 
   function fetchData() {
@@ -78,6 +131,7 @@ export function useTrading(currentAccount, getToken) {
             if (chrome.runtime.lastError.message.includes("Extension context invalidated")) {
               stopPolling();
             }
+            // For other runtime errors, we just log and let the next poll try again
             return;
           }
           
@@ -87,8 +141,8 @@ export function useTrading(currentAccount, getToken) {
         }
       );
     } catch (e) {
-      console.warn("[Exness Vue] SendMessage failed:", e);
-      stopPolling();
+      console.warn("[Exness Vue] SendMessage failed (will retry):", e);
+      // Don't stop polling on temporary errors, let setInterval continue
     }
   }
 
@@ -97,7 +151,11 @@ export function useTrading(currentAccount, getToken) {
     if (!currentAccount.isReady) return;
     
     fetchData(); // Call immediately
-    pollTimer = setInterval(fetchData, POLL_INTERVAL);
+    startCountdown(); // Start countdown
+    pollTimer = setInterval(() => {
+      fetchData();
+      startCountdown(); // Restart countdown after each fetch
+    }, POLL_INTERVAL);
     isPolling.value = true;
   }
 
@@ -110,7 +168,7 @@ export function useTrading(currentAccount, getToken) {
     if (!token) return;
 
     const body = {
-      "ga": "GA1.1.1407596536.1762928507", // Could be generated dynamically if needed
+      "ga": "GA1.1.1407596536.1762928507",
       "fp": "088cd089c479e941d6df789d806550c2",
       "track_uid": "",
       "cid": "exterm_web_" + generateUUID(),
@@ -134,12 +192,112 @@ export function useTrading(currentAccount, getToken) {
     }, (response) => {
       if (response && response.success) {
         console.log("[Exness Vue] Close Profit Success");
-        // Refresh fast
         setTimeout(fetchData, 500);
         setTimeout(fetchData, 2000);
       } else {
         console.error("[Exness Vue] Close Profit Failed", response);
       }
+    });
+  }
+
+  function closeAllStopLoss() {
+    if (!currentAccount.isReady) {
+      console.warn("Account info not ready");
+      return;
+    }
+    const token = getToken();
+    if (!token) return;
+
+    const body = {
+      "ga": "GA1.1.1407596536.1762928507",
+      "fp": "088cd089c479e941d6df789d806550c2",
+      "track_uid": "",
+      "cid": "exterm_web_" + generateUUID(),
+      "agent_timestamp": "",
+      "agent": "",
+      "agent_full_path": ""
+    };
+
+    const url = `${API_BASE}/${currentAccount.server}/v1/accounts/${currentAccount.login}/positions/all/close?close_mode=CLOSE_LOSS`;
+
+    chrome.runtime.sendMessage({
+      action: "sendRequest",
+      url: url,
+      method: "PUT",
+      token: token,
+      body: body,
+      extraHeaders: {
+        "x-cid": body.cid,
+        "x-request-id": generateUUID()
+      }
+    }, (response) => {
+      if (response && response.success) {
+        console.log("[Exness Vue] Close Stop Loss Success");
+        setTimeout(fetchData, 500);
+        setTimeout(fetchData, 2000);
+      } else {
+        console.error("[Exness Vue] Close Stop Loss Failed", response);
+      }
+    });
+  }
+
+  function closePosition(positionId, volume, price) {
+    if (!currentAccount.isReady) {
+      console.warn("Account info not ready");
+      return Promise.reject("Account not ready");
+    }
+    const token = getToken();
+    if (!token) return Promise.reject("No token");
+
+    const cid = "exterm_web_" + generateUUID();
+    const body = {
+      "position": {
+        "price": price,
+        "volume": volume,
+        "close_by_id": 0
+      },
+      "ga": "GA1.1.1407596536.1762928507",
+      "fp": "088cd089c479e941d6df789d806550c2",
+      "track_uid": "",
+      "cid": cid,
+      "agent_timestamp": "",
+      "agent": "",
+      "agent_full_path": ""
+    };
+
+    const url = `${API_BASE}/${currentAccount.server}/v2/accounts/${currentAccount.login}/positions/${positionId}/close`;
+
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({
+        action: "sendRequest",
+        url: url,
+        method: "PUT",
+        token: token,
+        body: body,
+        extraHeaders: {
+          "x-cid": cid,
+          "x-request-id": generateUUID()
+        }
+      }, (response) => {
+        if (response && response.success) {
+          console.log(`[Exness Vue] Close Position ${positionId} Success`);
+          resolve(response);
+        } else {
+          console.error(`[Exness Vue] Close Position ${positionId} Failed`, response);
+          reject(response);
+        }
+      });
+    });
+  }
+
+  function closePositions(positions) {
+    const promises = positions.map(p => 
+      closePosition(p.position_id, p.volume, p.price)
+    );
+    
+    return Promise.allSettled(promises).then(() => {
+      setTimeout(fetchData, 500);
+      setTimeout(fetchData, 2000);
     });
   }
 
@@ -153,9 +311,14 @@ export function useTrading(currentAccount, getToken) {
   return {
     stats,
     isPolling,
+    timeLeft,
+    totalProfit,
+    totalLoss,
     startPolling,
     stopPolling,
     fetchData,
-    closeAllProfit
+    closeAllProfit,
+    closeAllStopLoss,
+    closePositions
   };
 }
