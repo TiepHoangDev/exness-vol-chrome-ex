@@ -3,27 +3,20 @@
     <div v-if="stats.length === 0" class="no-data">No positions</div>
     <div v-else class="instrument-list">
       <div v-for="item in stats" :key="item.instrument" class="instrument-row">
-        <span class="instrument-name">{{ item.instrument }}</span>
-        <button 
-          @click="handleCloseProfit(item.profitPositions)"
-          class="btn-action btn-profit"
-          :title="`Close ${item.profitPositions.length} profit position(s)`"
-        >
-          P: +{{ item.totalProfit.toFixed(2) }}
+        <span class="instrument-name">{{ formatInstrumentName(item.instrument) }}</span>
+        <button @click="handleCloseProfit(item.profitPositions)" class="btn-action btn-profit"
+          :title="`Close ${item.profitPositions.length} profit position(s)`">
+          P: +{{ item.totalProfit.toFixed(2) }} ({{ item.buyVol.toFixed(2) }})
         </button>
-        <button 
-          @click="handleCloseLoss(item.lossPositions)"
-          class="btn-action btn-loss"
-          :title="`Close ${item.lossPositions.length} loss position(s)`"
-        >
-          L: {{ item.totalLoss.toFixed(2) }}
+        <button @click="handleCloseLoss(item.lossPositions)" class="btn-action btn-loss"
+          :title="`Close ${item.lossPositions.length} loss position(s)`">
+          L: {{ item.totalLoss.toFixed(2) }} ({{ item.sellVol.toFixed(2) }})
         </button>
-        <button 
-          @click="handleCloseAll(item.allPositions)"
-          class="btn-action btn-close-all"
-          :title="`Close all ${item.allPositions.length} position(s)`"
-        >
-          Close All: {{ (item.totalProfit + item.totalLoss).toFixed(2) }}
+        <button @click="handleCloseAll(item.allPositions)" class="btn-action btn-all"
+          :class="(item.totalProfit + item.totalLoss) >= 0 ? 'btn-profit' : 'btn-loss'"
+          :title="`Close all ${item.allPositions.length} position(s)`">
+          Close All: {{ (item.totalProfit + item.totalLoss).toFixed(2) }} ({{ (item.buyVol - item.sellVol).toFixed(2)
+          }})
         </button>
       </div>
     </div>
@@ -41,6 +34,27 @@ const props = defineProps({
     required: true
   }
 });
+
+function formatInstrumentName(name) {
+  if (!name) return '';
+
+  // Try splitting by common delimiters first
+  const parts = name.split(/[_\-\/]/);
+  if (parts.length >= 2) {
+    const first = parts[0].substring(0, 3);
+    const second = parts[1].substring(0, 3);
+    return `${first}/${second}`;
+  }
+
+  // For formats like XAUUSDT, split at 3 characters
+  if (name.length >= 6) {
+    const first = name.substring(0, 3);
+    const second = name.substring(3, 6);
+    return `${first}/${second}`;
+  }
+
+  return name;
+}
 
 function handleCloseProfit(positions) {
   if (confirm(`Close ${positions.length} profit position(s)?`)) {
@@ -91,7 +105,6 @@ function handleCloseAll(positions) {
 
 .no-data {
   color: #666;
-  font-size: 12px;
   text-align: center;
   padding: 20px;
 }
@@ -120,7 +133,6 @@ function handleCloseAll(positions) {
 .instrument-name {
   color: #f0b90b;
   font-weight: bold;
-  font-size: 14px;
   min-width: 90px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -130,12 +142,17 @@ function handleCloseAll(positions) {
   border: none;
   border-radius: 3px;
   padding: 8px 14px;
-  font-size: 12px;
   font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--panel-font-size, 14px);
+}
+
+.btn-all {
+  flex: 1.5;
 }
 
 .btn-action:disabled {
@@ -151,7 +168,6 @@ function handleCloseAll(positions) {
 .btn-profit {
   background-color: #0ecb81;
   color: white;
-  min-width: 90px;
 }
 
 .btn-profit:hover {
@@ -163,24 +179,11 @@ function handleCloseAll(positions) {
 .btn-loss {
   background-color: #f6465d;
   color: white;
-  min-width: 90px;
 }
 
 .btn-loss:hover {
   background-color: #e63950;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(246, 70, 93, 0.3);
-}
-
-.btn-close-all {
-  background-color: #555;
-  color: white;
-  min-width: 140px;
-}
-
-.btn-close-all:hover {
-  background-color: #666;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(85, 85, 85, 0.3);
 }
 </style>
