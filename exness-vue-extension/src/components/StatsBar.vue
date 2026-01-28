@@ -4,19 +4,19 @@
     <div v-else class="instrument-list">
       <div v-for="item in stats" :key="item.instrument" class="instrument-row">
         <span class="instrument-name">{{ formatInstrumentName(item.instrument) }}</span>
+        <span class="price-info">(Buy: {{ item.buyVol.toFixed(2) }}) (Sell: {{ item.sellVol.toFixed(2) }})</span>
         <button @click="handleCloseProfit(item.profitPositions)" class="btn-action btn-profit"
           :title="`Close ${item.profitPositions.length} profit position(s)`">
-          P: +{{ item.totalProfit.toFixed(2) }} ({{ item.buyVol.toFixed(2) }})
+          PROFIT: +{{ item.totalProfit.toFixed(2) }}
         </button>
         <button @click="handleCloseLoss(item.lossPositions)" class="btn-action btn-loss"
           :title="`Close ${item.lossPositions.length} loss position(s)`">
-          L: {{ item.totalLoss.toFixed(2) }} ({{ item.sellVol.toFixed(2) }})
+          LOSS: {{ item.totalLoss.toFixed(2) }}
         </button>
         <button @click="handleCloseAll(item.allPositions)" class="btn-action btn-all"
           :class="(item.totalProfit + item.totalLoss) >= 0 ? 'btn-profit' : 'btn-loss'"
           :title="`Close all ${item.allPositions.length} position(s)`">
-          Close All: {{ (item.totalProfit + item.totalLoss).toFixed(2) }} ({{ (item.buyVol - item.sellVol).toFixed(2)
-          }})
+          CLOSE ALL: {{ (item.totalProfit + item.totalLoss).toFixed(2) }}
         </button>
       </div>
     </div>
@@ -138,21 +138,22 @@ function handleCloseAll(positions) {
   letter-spacing: 0.5px;
 }
 
+.price-info {
+  color: #aaa;
+  font-size: 0.9em;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
 .btn-action {
   border: none;
   border-radius: 3px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
-  flex: 1;
-  min-width: 0;
   font-size: var(--panel-font-size, 14px);
-}
-
-.btn-all {
-  flex: 1.5;
 }
 
 .btn-action:disabled {

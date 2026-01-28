@@ -9,8 +9,8 @@ export function useDraggable(initialLeft = 100, initialTop = 50) {
   function loadPosition() {
     chrome.storage.local.get(['vue_panel_pos'], (res) => {
       if (res.vue_panel_pos) {
-        position.left = res.vue_panel_pos.left;
-        position.top = res.vue_panel_pos.top;
+        position.left = Math.max(res.vue_panel_pos.left, 0);
+        position.top = Math.max(res.vue_panel_pos.top, 0);
       }
     });
   }
@@ -26,7 +26,7 @@ export function useDraggable(initialLeft = 100, initialTop = 50) {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     initialPos = { left: position.left, top: position.top };
-    
+
     document.addEventListener('mousemove', onDrag);
     document.addEventListener('mouseup', stopDrag);
     document.body.style.userSelect = 'none';

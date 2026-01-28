@@ -16,23 +16,31 @@
       </div>
       <div class="header-right">
         <button @click.stop="decreaseFontSize" class="btn-icon" title="Decrease font size">A-</button>
-        {{ fontSize }}
+        <span class="font-size-display">{{ fontSize }}</span>
         <button @click.stop="increaseFontSize" class="btn-icon" title="Increase font size">A+</button>
+        <button @click.stop="resetFontSize" class="btn-icon" title="Reset font size">⟲</button>
       </div>
     </div>
 
     <!-- Account Info Row -->
-    <div class="account-row instrument-row" v-if="currentAccount.login">
-      <span class="account-label">ID: {{ currentAccount.login }}</span>
+    <div class="account-row" v-if="currentAccount.login">
+      <div class="account-dropdown-wrapper">
+        <select @change="onAccountChange" :value="currentAccount.login" class="account-dropdown">
+          <option v-for="acc in allAccounts.filter(a => a.is_active)" :key="acc.account_login"
+            :value="acc.account_login">
+            #{{ acc.account_login }} {{ acc.name }}
+          </option>
+        </select>
+      </div>
       <button @click="closeAllProfit" class="profit-badge btn-action" title="Close all profit positions">
-        P: +{{ totalProfit.toFixed(2) }}
+        PROFIT: +{{ totalProfit.toFixed(2) }}
       </button>
       <button @click="closeAllStopLoss" class="loss-badge btn-action" title="Close all loss positions">
-        L: {{ totalLoss.toFixed(2) }}
+        LOSS: {{ totalLoss.toFixed(2) }}
       </button>
       <button @click="handleCloseAllPositions" :class="(totalProfit + totalLoss) >= 0 ? 'profit-badge' : 'loss-badge'"
         class="btn-close-all-account btn-all" title="Close all positions">
-        Close All: {{ (totalProfit + totalLoss).toFixed(2) }}
+        CLOSE ALL: {{ (totalProfit + totalLoss).toFixed(2) }}
       </button>
     </div>
 
@@ -52,12 +60,12 @@ import { useTrading } from '../composables/useTrading';
 
 // --- Composables ---
 const { position, startDrag } = useDraggable(100, 50);
-const { currentAccount, getToken, initAccountInfo } = useAccount();
+const { currentAccount, allAccounts, getToken, initAccountInfo, switchAccount } = useAccount();
 const { stats, isPolling, timeLeft, totalProfit, totalLoss, startPolling, stopPolling, closeAllProfit, closeAllStopLoss, closePositions } = useTrading(currentAccount, getToken);
 
 // --- Local State ---
 const isReloading = ref(false);
-const fontSize = ref(localStorage.getItem('fontSize') || 14);
+const fontSize = ref(Number(localStorage.getItem('exness.extention.fontSize')) || 14);
 
 async function reload() {
   if (isReloading.value) return;
@@ -72,6 +80,11 @@ async function reload() {
 
   startPolling();
   isReloading.value = false;
+}
+
+async function onAccountChange(e) {
+  switchAccount(e.target.value);
+  await reload();
 }
 
 function handleCloseStopLoss() {
@@ -90,15 +103,20 @@ function handleCloseAllPositions() {
 function increaseFontSize() {
   if (fontSize.value < 24) {
     fontSize.value += 1;
-    localStorage.setItem('fontSize', fontSize.value);
+    localStorage.setItem('exness.extention.fontSize', fontSize.value);
   }
 }
 
 function decreaseFontSize() {
   if (fontSize.value > 10) {
     fontSize.value -= 1;
-    localStorage.setItem('fontSize', fontSize.value);
+    localStorage.setItem('exness.extention.fontSize', fontSize.value);
   }
+}
+
+function resetFontSize() {
+  fontSize.value = 14;
+  localStorage.setItem('exness.extention.fontSize', fontSize.value);
 }
 
 // --- Lifecycle ---
@@ -128,7 +146,8 @@ onUnmounted(() => {
   backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
-  min-width: 600px;
+  width: auto;
+  max-width: 90vw;
 }
 
 .ex-panel span,
@@ -158,13 +177,55 @@ onUnmounted(() => {
   gap: 6px;
 }
 
+.font-size-display {
+  color: #888;
+  font-weight: 500;
+  min-width: 20px;
+  text-align: center;
+}
+
 .account-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid #444;
   background: rgba(20, 24, 36, 0.8);
+}
+
+.account-dropdown-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.account-dropdown {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.account-dropdown:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: #666;
+}
+
+.account-dropdown:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: #0ecb81;
+  box-shadow: 0 0 4px rgba(14, 203, 129, 0.3);
+}
+
+.account-dropdown option {
+  background-color: #1c2030;
+  color: #e0e0e0;
 }
 
 .instruments-container {
@@ -227,17 +288,11 @@ onUnmounted(() => {
 .btn-action {
   border: none;
   border-radius: 3px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
-  flex: 1;
-  min-width: 0;
-}
-
-.btn-all {
-  flex: 1.5;
 }
 
 

@@ -8,6 +8,8 @@ export function useAccount() {
     error: null
   });
 
+  const allAccounts = reactive([]);
+
   function getToken() {
     const matches = document.cookie.match(/(?:^|;\s*)JWT=([^;]+)/);
     return matches ? matches[1] : null;
@@ -30,15 +32,6 @@ export function useAccount() {
       return;
     }
 
-    // 1. Get Active Account ID from LocalStorage
-    const activeLogin = localStorage.getItem('ACTIVE_ACCOUNT_NUMBER');
-    if (!activeLogin) {
-      currentAccount.error = "No Active Account";
-      console.warn("[Exness Vue] No ACTIVE_ACCOUNT_NUMBER in localStorage");
-      return;
-    }
-    currentAccount.login = activeLogin;
-
     // 2. Fetch All Accounts to find Server
     try {
       chrome.runtime.sendMessage({
@@ -48,9 +41,21 @@ export function useAccount() {
         token: token
       }, (response) => {
         if (response && response.success && Array.isArray(response.data)) {
-          const acc = response.data.find(a => String(a.account_login) === String(activeLogin));
-          if (acc && acc.server) {
-            currentAccount.server = parseServerName(acc.server.server_name || acc.server.server_code);
+          allAccounts.length = 0;
+          allAccounts.push(...response.data);
+
+          // 1. Get Active Account ID from LocalStorage
+          let activeLogin = localStorage.getItem('texActiveAccountNumber');
+
+          // If no active account or not found in list, use first account
+          let selectedAccount = response.data.filter(a => a.is_active)[0];
+          if (activeLogin) {
+            selectedAccount = response.data.find(a => String(a.account_login) === String(activeLogin));
+          }
+
+          if (selectedAccount && selectedAccount.server) {
+            currentAccount.login = activeLogin;
+            currentAccount.server = parseServerName(selectedAccount.server.server_name || selectedAccount.server.server_code);
             currentAccount.isReady = true;
             currentAccount.error = null;
             console.log(`[Exness Vue] Configured: Login=${currentAccount.login}, Server=${currentAccount.server}`);
@@ -69,9 +74,26 @@ export function useAccount() {
     }
   }
 
+  function switchAccount(accountLogin) {
+    const account = allAccounts.find(a => String(a.account_login) === String(accountLogin));
+    if (account && account.server) {
+      currentAccount.login = String(account.account_login);
+      currentAccount.server = parseServerName(account.server.server_name || account.server.server_code);
+      currentAccount.isReady = true;
+      currentAccount.error = null;
+      localStorage.setItem('texActiveAccountNumber', currentAccount.login);
+      console.log(`[Exness Vue] Switched to: Login=${currentAccount.login}, Server=${currentAccount.server}`);
+    } else {
+      currentAccount.error = "Account Switch Failed. accountLogin=" + accountLogin;
+      console.warn("[Exness Vue] Account not found in list or no server info", accountLogin);
+    }
+  }
+
   return {
     currentAccount,
+    allAccounts,
     getToken,
-    initAccountInfo
+    initAccountInfo,
+    switchAccount
   };
 }

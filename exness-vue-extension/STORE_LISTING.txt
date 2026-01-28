@@ -7,25 +7,32 @@ Trade Stats & Tools for Exness Web
 ExTradeStats
 
 3. Summary (Description < 132 chars):
-Enhance Exness WebTerminal with real-time Buy/Sell volume stats, break-even analysis, and one-click profit closing.
+Enhance Exness WebTerminal with multi-account stats, one-click closing, and real-time profit/loss tracking.
 
 4. Description (Long):
-This extension provides essential trading utilities integrated directly into the Exness WebTerminal interface, designed for professional traders who need quick insights.
+Take your trading on the Exness WebTerminal to the next level with this essential toolkit. Designed for serious traders, this extension provides an advanced, integrated dashboard that gives you critical insights and powerful controls right where you need them.
 
 Key Features:
-✅ Real-time Statistics:
-- Automatically calculates Total Buy Volume & Sell Volume.
-- Displays Average Entry Price for both Buy and Sell positions.
-- Calculates the Overall Break-even Price (Weighted Average).
+*   **Multi-Account Management:**
+    *   Instantly switch between your active trading accounts with a simple dropdown menu.
+    *   Statistics and actions are automatically updated for the selected account.
 
-✅ Smart Dashboard:
-- A compact, horizontal floating bar that fits perfectly at the top or bottom of your chart.
-- Draggable interface: Place it anywhere on your screen.
-- Auto-hide/Minimize mode to save screen space.
+*   **Advanced Real-Time Statistics:**
+    *   View total profit and loss for your entire account at a glance.
+    *   For each instrument (e.g., XAU/USD), see a detailed breakdown of:
+        *   Total Profit & Loss
+        *   Total Buy & Sell Volume
+        *   Average Buy & Sell Prices
 
-✅ Trading Tools:
-- CLOSE PROFIT button: Securely close all profitable positions with one click (requires confirmation).
-- Auto-detects Active Account and connects to the correct Trading Server (Real/Trial).
+*   **Powerful One-Click Trading Actions:**
+    *   **Close All:** Instantly close all open positions for the selected account or a specific instrument.
+    *   **Close Profit:** Close only the profitable positions.
+    *   **Close Loss:** Close only the losing positions.
+
+*   **Seamlessly Integrated UI:**
+    *   A clean, draggable floating panel that you can place anywhere on your chart.
+    *   Adjustable font size and a responsive design that expands to fit all information without truncation.
+    *   A "Live" status indicator shows you when data is being polled in real-time.
 
 How to use:
 1. Log in to Exness WebTerminal.
