@@ -4,12 +4,23 @@
     <div v-else class="instrument-list">
       <div v-for="item in stats" :key="item.instrument" class="instrument-row">
         <span class="instrument-name">{{ formatInstrumentName(item.instrument) }}</span>
-        <span class="price-info">(Buy: {{ item.buyVol.toFixed(2) }}) (Sell: {{ item.sellVol.toFixed(2) }})</span>
+        <button @click="handleCloseBuy(item)" class="btn-action btn-buy" 
+          :disabled="item.buyVol === 0"
+          :title="item.buyVol > 0 ? `Close ${item.buyPositions.length} BUY position(s)` : 'No BUY positions'">
+          Buy: {{ item.buyVol.toFixed(2) }}
+        </button>
+        <button @click="handleCloseSell(item)" class="btn-action btn-sell"
+          :disabled="item.sellVol === 0"
+          :title="item.sellVol > 0 ? `Close ${item.sellPositions.length} SELL position(s)` : 'No SELL positions'">
+          Sell: {{ item.sellVol.toFixed(2) }}
+        </button>
         <button @click="handleCloseProfit(item.profitPositions)" class="btn-action btn-profit"
+          :disabled="item.profitPositions.length === 0"
           :title="`Close ${item.profitPositions.length} profit position(s)`">
           PROFIT: +{{ item.totalProfit.toFixed(2) }}
         </button>
         <button @click="handleCloseLoss(item.lossPositions)" class="btn-action btn-loss"
+          :disabled="item.lossPositions.length === 0"
           :title="`Close ${item.lossPositions.length} loss position(s)`">
           LOSS: {{ item.totalLoss.toFixed(2) }}
         </button>
@@ -32,6 +43,10 @@ const props = defineProps({
   closePositions: {
     type: Function,
     required: true
+  },
+  confirmEnabled: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -56,20 +71,37 @@ function formatInstrumentName(name) {
   return name;
 }
 
+function handleCloseBuy(item) {
+  if (item.buyPositions.length === 0) return;
+  if (!props.confirmEnabled || confirm(`Close ${item.buyPositions.length} BUY position(s) for ${formatInstrumentName(item.instrument)}?`)) {
+    props.closePositions(item.buyPositions);
+  }
+}
+
+function handleCloseSell(item) {
+  if (item.sellPositions.length === 0) return;
+  if (!props.confirmEnabled || confirm(`Close ${item.sellPositions.length} SELL position(s) for ${formatInstrumentName(item.instrument)}?`)) {
+    props.closePositions(item.sellPositions);
+  }
+}
+
 function handleCloseProfit(positions) {
-  if (confirm(`Close ${positions.length} profit position(s)?`)) {
+  if (positions.length === 0) return;
+  if (!props.confirmEnabled || confirm(`Close ${positions.length} profit position(s)?`)) {
     props.closePositions(positions);
   }
 }
 
 function handleCloseLoss(positions) {
-  if (confirm(`Close ${positions.length} loss position(s)?`)) {
+  if (positions.length === 0) return;
+  if (!props.confirmEnabled || confirm(`Close ${positions.length} loss position(s)?`)) {
     props.closePositions(positions);
   }
 }
 
 function handleCloseAll(positions) {
-  if (confirm(`Close all ${positions.length} position(s)?`)) {
+  if (positions.length === 0) return;
+  if (!props.confirmEnabled || confirm(`Close all ${positions.length} position(s)?`)) {
     props.closePositions(positions);
   }
 }
@@ -186,5 +218,27 @@ function handleCloseAll(positions) {
   background-color: #e63950;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(246, 70, 93, 0.3);
+}
+
+.btn-buy {
+  background-color: #2962ff;
+  color: white;
+}
+
+.btn-buy:hover:not(:disabled) {
+  background-color: #1e4bd8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(41, 98, 255, 0.3);
+}
+
+.btn-sell {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.btn-sell:hover:not(:disabled) {
+  background-color: #b71c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(211, 47, 47, 0.3);
 }
 </style>

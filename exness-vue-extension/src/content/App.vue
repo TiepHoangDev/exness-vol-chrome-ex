@@ -1,9 +1,10 @@
 <template>
-  <div ref="panelRef" class="ex-panel"
+  <div v-if="!isMinimized" ref="panelRef" class="ex-panel"
     :style="{ left: position.left + 'px', top: position.top + 'px', '--panel-font-size': fontSize + 'px' }">
     <!-- Header Row -->
     <div class="header-row" @mousedown="startDrag">
       <div class="header-left">
+        <img :src="iconUrl" alt="" class="header-icon" />
         <span class="drag-handle">⋮⋮</span>
         <div class="status-indicator">
           <span class="status-dot" :class="{ active: isPolling }"></span>
@@ -18,7 +19,12 @@
         <button @click.stop="decreaseFontSize" class="btn-icon" title="Decrease font size">A-</button>
         <span class="font-size-display">{{ fontSize }}</span>
         <button @click.stop="increaseFontSize" class="btn-icon" title="Increase font size">A+</button>
-        <button @click.stop="resetFontSize" class="btn-icon" title="Reset font size">⟲</button>
+        <span class="separator">|</span>
+        <button @click.stop="toggleConfirm" class="btn-icon btn-confirm" :class="{ 'confirm-off': !confirmEnabled }"
+          :title="confirmEnabled ? 'Confirm ON - Click to disable' : 'Confirm OFF - Click to enable'">
+          <span class="confirm-text">? Confirm</span>
+        </button>
+        <button @click.stop="minimize" class="btn-icon" title="Minimize panel">−</button>
       </div>
     </div>
 
@@ -46,9 +52,16 @@
 
     <!-- Instruments List -->
     <div class="instruments-container">
-      <StatsBar :stats="stats" :closePositions="closePositions" />
+      <StatsBar :stats="stats" :closePositions="closePositions" :confirmEnabled="confirmEnabled" />
     </div>
   </div>
+
+  <!-- Minimized Button -->
+  <button v-else class="ex-minimized-btn" @click="restore"
+    :style="{ left: position.left + 'px', top: position.top + 'px' }" title="Restore panel">
+    <img :src="iconUrl" alt="" class="minimized-icon" />
+    <span class="minimized-text">ExStats</span>
+  </button>
 </template>
 
 <script setup>
@@ -66,6 +79,9 @@ const { stats, isPolling, timeLeft, totalProfit, totalLoss, startPolling, stopPo
 // --- Local State ---
 const isReloading = ref(false);
 const fontSize = ref(Number(localStorage.getItem('exness.extention.fontSize')) || 14);
+const confirmEnabled = ref(localStorage.getItem('exness.extention.confirmEnabled') !== 'false');
+const isMinimized = ref(localStorage.getItem('exness.extention.minimized') === 'true');
+const iconUrl = chrome.runtime.getURL('icons/icon48.png');
 
 async function reload() {
   if (isReloading.value) return;
@@ -95,8 +111,10 @@ function handleCloseStopLoss() {
 
 function handleCloseAllPositions() {
   const allPositions = stats.value.flatMap(item => item.allPositions);
-  if (allPositions.length > 0 && confirm(`Close all ${allPositions.length} position(s)?`)) {
-    closePositions(allPositions);
+  if (allPositions.length > 0) {
+    if (!confirmEnabled.value || confirm(`Close all ${allPositions.length} position(s)?`)) {
+      closePositions(allPositions);
+    }
   }
 }
 
@@ -119,15 +137,50 @@ function resetFontSize() {
   localStorage.setItem('exness.extention.fontSize', fontSize.value);
 }
 
+function toggleConfirm() {
+  confirmEnabled.value = !confirmEnabled.value;
+  localStorage.setItem('exness.extention.confirmEnabled', confirmEnabled.value);
+}
+
+function minimize() {
+  isMinimized.value = true;
+  localStorage.setItem('exness.extention.minimized', 'true');
+}
+
+function restore() {
+  isMinimized.value = false;
+  localStorage.setItem('exness.extention.minimized', 'false');
+}
+
+// --- Settings sync from popup ---
+function syncSettingsFromStorage() {
+  fontSize.value = Number(localStorage.getItem('exness.extention.fontSize')) || 14;
+  confirmEnabled.value = localStorage.getItem('exness.extention.confirmEnabled') !== 'false';
+}
+
+// Listen for storage changes (from popup)
+window.addEventListener('storage', (e) => {
+  if (e.key === 'exness.extention.fontSize' || e.key === 'exness.extention.confirmEnabled') {
+    syncSettingsFromStorage();
+  }
+});
+
+// Also poll for changes since storage event doesn't fire in same tab
+let settingsSyncInterval = null;
+
 // --- Lifecycle ---
 onMounted(async () => {
   // useDraggable handles its own loadPosition onMounted
   await initAccountInfo();
   // useTrading watches currentAccount.isReady and auto-starts polling
+
+  // Sync settings periodically (for popup changes via scripting API)
+  settingsSyncInterval = setInterval(syncSettingsFromStorage, 500);
 });
 
 onUnmounted(() => {
   stopPolling();
+  if (settingsSyncInterval) clearInterval(settingsSyncInterval);
 });
 </script>
 
@@ -385,5 +438,66 @@ onUnmounted(() => {
 .status-dot.active {
   background: #0ecb81;
   box-shadow: 0 0 6px #0ecb81;
+}
+
+.btn-confirm {
+  position: relative;
+  color: #0ecb81;
+  border-color: #0ecb81;
+}
+
+.btn-confirm.confirm-off {
+  color: #f6465d;
+  border-color: #f6465d;
+}
+
+.confirm-text {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.separator {
+  color: #444;
+  margin: 0 4px;
+}
+
+.header-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
+}
+
+.ex-minimized-btn {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 999999;
+  background: rgba(28, 32, 48, 0.95);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.minimized-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.minimized-text {
+  color: #f0b90b;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 6px;
+}
+
+.ex-minimized-btn:hover {
+  background: rgba(40, 44, 60, 0.95);
+  border-color: #f0b90b;
 }
 </style>

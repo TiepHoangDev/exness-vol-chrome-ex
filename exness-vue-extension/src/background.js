@@ -1,10 +1,33 @@
 // src/background.js
+
+// Error tracking
+async function logError(message) {
+  try {
+    const result = await chrome.storage.local.get(['exness_errors']);
+    const errors = result.exness_errors || [];
+    errors.unshift({
+      timestamp: Date.now(),
+      message: message
+    });
+    // Keep only last 50 errors
+    if (errors.length > 50) {
+      errors.length = 50;
+    }
+    await chrome.storage.local.set({ exness_errors: errors });
+  } catch (e) {
+    console.error("Failed to log error:", e);
+  }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "fetchData") {
     // Legacy support for polling
     doRequest(request.url, "GET", request.token)
       .then(data => sendResponse({ success: true, data: data }))
-      .catch(error => sendResponse({ success: false, error: error.toString() }));
+      .catch(error => {
+        logError(`Fetch error: ${error.toString()}`);
+        sendResponse({ success: false, error: error.toString() });
+      });
     return true;
   }
   
@@ -12,7 +35,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Generic request support
     doRequest(request.url, request.method, request.token, request.body, request.extraHeaders)
       .then(data => sendResponse({ success: true, data: data }))
-      .catch(error => sendResponse({ success: false, error: error.toString() }));
+      .catch(error => {
+        logError(`Request error (${request.method}): ${error.toString()}`);
+        sendResponse({ success: false, error: error.toString() });
+      });
+    return true;
+  }
+  
+  if (request.action === "logError") {
+    logError(request.message);
+    sendResponse({ success: true });
+    return true;
+  }
+  
+  if (request.action === "getErrors") {
+    chrome.storage.local.get(['exness_errors']).then(result => {
+      sendResponse({ success: true, errors: result.exness_errors || [] });
+    });
+    return true;
+  }
+  
+  if (request.action === "clearErrors") {
+    chrome.storage.local.set({ exness_errors: [] }).then(() => {
+      sendResponse({ success: true });
+    });
     return true;
   }
 });

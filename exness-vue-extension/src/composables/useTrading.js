@@ -93,6 +93,8 @@ export function useTrading(currentAccount, getToken) {
         totalLoss,
         profitPositions,
         lossPositions,
+        buyPositions: buys,
+        sellPositions: sells,
         allPositions: instPositions
       };
     });

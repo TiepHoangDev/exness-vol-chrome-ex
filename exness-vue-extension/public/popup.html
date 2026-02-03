@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExTradeStats</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      width: 320px;
+      min-height: 200px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1c2030;
+      color: #e0e0e0;
+      padding: 16px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #444;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header-icon { width: 24px; height: 24px; }
+    .title { font-size: 16px; font-weight: bold; color: #f0b90b; }
+    .version { font-size: 11px; color: #888; }
+    
+    .settings-section {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid #333;
+      border-radius: 6px;
+    }
+    
+    .settings-title {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+    
+    .setting-row:not(:last-child) { border-bottom: 1px solid #333; }
+    .setting-label { color: #ccc; font-size: 13px; }
+    .setting-control { display: flex; align-items: center; gap: 8px; }
+    
+    .font-btn {
+      background: transparent;
+      border: 1px solid #555;
+      color: #aaa;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    
+    .font-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: #666;
+    }
+    
+    .font-value {
+      min-width: 24px;
+      text-align: center;
+      color: #f0b90b;
+      font-weight: bold;
+    }
+    
+    .toggle-switch { position: relative; width: 44px; height: 24px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #444;
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #888;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider { background-color: #0ecb81; }
+    input:checked + .toggle-slider:before { transform: translateX(20px); background-color: #fff; }
+    
+    .error-section { margin-top: 12px; }
+    
+    .error-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 10px 12px;
+      background: rgba(246, 70, 93, 0.15);
+      border: 1px solid #f6465d;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .error-header:hover { background: rgba(246, 70, 93, 0.25); }
+    
+    .error-header.no-errors {
+      background: rgba(14, 203, 129, 0.15);
+      border-color: #0ecb81;
+      cursor: default;
+    }
+    
+    .error-count { font-weight: bold; font-size: 14px; }
+    .error-count.has-errors { color: #f6465d; }
+    .error-count.no-errors { color: #0ecb81; }
+    .error-arrow { color: #888; transition: transform 0.2s; }
+    .error-arrow.expanded { transform: rotate(180deg); }
+    
+    .error-list { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+    .error-list.expanded { max-height: 300px; overflow-y: auto; }
+    
+    .error-item {
+      padding: 10px 12px;
+      margin-top: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid #333;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .error-time { color: #888; font-size: 10px; margin-bottom: 4px; }
+    .error-message { color: #f6465d; word-break: break-word; }
+    
+    .clear-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid #555;
+      color: #aaa;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    
+    .clear-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    
+    .info-text {
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #333;
+    }
+    
+    .info-text a { color: #f0b90b; text-decoration: none; }
+    .info-text a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <img src="icons/icon48.png" alt="" class="header-icon">
+      <span class="title">ExTradeStats</span>
+    </div>
+    <span class="version">v3.4.0</span>
+  </div>
+  
+  <div class="settings-section">
+    <div class="settings-title">Settings</div>
+    
+    <div class="setting-row">
+      <span class="setting-label">Font Size</span>
+      <div class="setting-control">
+        <button id="font-decrease" class="font-btn">A-</button>
+        <span id="font-value" class="font-value">14</span>
+        <button id="font-increase" class="font-btn">A+</button>
+      </div>
+    </div>
+    
+    <div class="setting-row">
+      <span class="setting-label">Confirm before close</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="confirm-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+  
+  <div class="error-section">
+    <div id="error-header" class="error-header no-errors">
+      <span id="error-count" class="error-count no-errors">✓ No errors</span>
+      <span id="error-arrow" class="error-arrow" style="display: none;">▼</span>
+    </div>
+    <div id="error-list" class="error-list"></div>
+    <button id="clear-btn" class="clear-btn" style="display: none;">Clear all errors</button>
+  </div>
+  
+  <div class="info-text">
+    Works only on <a href="https://my.exness.com/webtrading/" target="_blank">my.exness.com/webtrading</a>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
