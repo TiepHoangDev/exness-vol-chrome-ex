@@ -81,7 +81,9 @@ const isReloading = ref(false);
 const fontSize = ref(Number(localStorage.getItem('exness.extention.fontSize')) || 14);
 const confirmEnabled = ref(localStorage.getItem('exness.extention.confirmEnabled') !== 'false');
 const isMinimized = ref(localStorage.getItem('exness.extention.minimized') === 'true');
-const iconUrl = chrome.runtime.getURL('icons/icon48.png');
+
+// Base64 SVG icon - inline to avoid CSP issues
+const iconUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSI4IiBmaWxsPSIjMUMyMDMwIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNGMEI5MEIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPmV4PC90ZXh0Pgo8L3N2Zz4=';
 
 async function reload() {
   if (isReloading.value) return;
